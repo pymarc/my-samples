@@ -1,8 +1,4 @@
-Protocol → interfejs po metodach, nie po dziedziczeniu
-TypedDict → typowane JSON-y
-Literal → enumeracja bez Enum
-dataclass → struktura bez walidacji
-pydantic v2 → walidacja + serializacja (serde)
+# Advanced Typing in Python
 
 ## Protocol
 It's like ABC but newer, it's more flexible.
@@ -66,4 +62,55 @@ my_dict: EventDict = {
     "msg": "This is an info message.",
     "ts": 1625247600.0
 }
+```
+
+## dataclass vs pydantic v2
+
+### dataclass
+Built-in, simple to use, no validation.
+
+Example:
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class User:
+    id: int
+    name: str
+
+user = User(id=1, name="Alice")
+print(user)
+# Output: User(id=1, name='Alice')
+```
+
+### pydantic v2
+More powerful, built-in validation, serialization.
+
+Example:
+
+```python
+from pydantic import BaseModel, ValidationError
+
+class User(BaseModel):
+    id: int
+    name: str
+
+try:
+    user =  User(id='not-an-int', name="Alice")
+except ValidationError as e:
+    print(e)
+# Output: 1 validation error for User
+
+try:
+    user = User(id=1, name="Alice")
+    print(user)
+except ValidationError as e:
+    print(e)
+# Output: id=1 name='Alice'
+
+# Serialization
+user_dict = user.model_dump()
+print(user_dict)
+# Output: {'id': 1, 'name': 'Alice'}
 ```
