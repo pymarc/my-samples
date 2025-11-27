@@ -29,3 +29,24 @@ use_logger(real_logger)
 `mypy` will be happy because `RealLogger` has the required method.
 
 PS. To run `mypy` execute `mypy your_file.py` or `mypy /my/dir`.
+
+## TypedDict
+It's for typing dictionaries.
+
+Example:
+
+```python
+from typing import TypedDict, Literal
+
+class EventDict(TypedDict):
+    type: Literal["INFO", "ERROR"]
+    msg: str
+    ts: float
+
+# This is valid
+my_dict: EventDict = {
+    "type": "INFO",
+    "msg": "This is an info message.",
+    "ts": 1625247600.0
+}
+```
