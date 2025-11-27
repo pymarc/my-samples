@@ -30,6 +30,23 @@ use_logger(real_logger)
 
 PS. To run `mypy` execute `mypy your_file.py` or `mypy /my/dir`.
 
+## Literal
+It allows to define a set of strict values for a variable.
+
+Example:
+
+```python
+from typing import Literal
+
+def review_service(rating: Literal[1, 2, 3, 4, 5]) -> str:
+    return f"Thank you for your {rating}-star review!"
+
+# Not valid
+review_service(10)  # mypy will complain
+# Valid
+review_service(5)
+```
+
 ## TypedDict
 It's for typing dictionaries.
 
