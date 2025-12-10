@@ -114,3 +114,15 @@ user_dict = user.model_dump()
 print(user_dict)
 # Output: {'id': 1, 'name': 'Alice'}
 ```
+
+
+## Function tools
+
+* context manager = `__enter__` / `__exit__` or `@contextmanager` (setup/teardown in one place)
+* generator (`yield`) = lazy sequence, saves memory
+* `yield from` = delegation to another generator
+* `batched(iterable, size)` → useful for processing data in chunks (do it yourself)
+* `itertools.groupby` → aggregation by key on sorted data
+* `functools.lru_cache` → memoization of expensive function calls
+* `functools.partial` → preconfigured functions (e.g., `logger.info`)
+
