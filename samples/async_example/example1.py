@@ -4,11 +4,19 @@ import asyncio
 from samples.utils.timing import time_it
 
 
+semaphore = asyncio.Semaphore(5)
+
+
 async def fetch_url(url):
     print("Start fetching URL (5s delay): " + url)
     await asyncio.sleep(5)
     print(f"Ended request to URL: {url}")
     return f"{url} response: success"
+
+
+async def semaphored_fetch_url(url):
+    async with semaphore:
+        return await fetch_url(url)
 
 
 async def main_1():
@@ -35,7 +43,16 @@ async def main_2():
     print(f"Task 1 and 2 results: {results}")
 
 
+async def main_3():
+    """It's a case where we are using Semaphore limitation to maximum 5 tasks at a time."""
+    print("Waiting for the tasks to finish (Semaphore)...")
+    results = await asyncio.gather(
+        semaphored_fetch_url('http://some.com'), semaphored_fetch_url('http://another.some.com')
+    )
+    print(f"Task 1 and 2 results (Semaphore): {results}")
+
+
 if __name__ == '__main__':
     with time_it(label="Total execution time of the program"):
-        asyncio.run(main_2())
+        asyncio.run(main_3())
         print("There are two tasks, both taking 5 second. Is not the asynchronous run it would take 10 seconds.")
