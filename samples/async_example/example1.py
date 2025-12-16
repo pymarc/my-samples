@@ -38,7 +38,8 @@ async def main_2():
     """
     print("Waiting for the tasks to finish...")
     results = await asyncio.gather(
-        fetch_url('http://some.com'), fetch_url('http://another.some.com')
+        fetch_url('http://some.com'), fetch_url('http://another.some.com'),
+        return_exceptions=True
     )
     print(f"Task 1 and 2 results: {results}")
 
@@ -47,7 +48,8 @@ async def main_3():
     """It's a case where we are using Semaphore limitation to maximum 5 tasks at a time."""
     print("Waiting for the tasks to finish (Semaphore)...")
     results = await asyncio.gather(
-        semaphored_fetch_url('http://some.com'), semaphored_fetch_url('http://another.some.com')
+        semaphored_fetch_url('http://some.com'), semaphored_fetch_url('http://another.some.com'),
+        return_exceptions=True
     )
     print(f"Task 1 and 2 results (Semaphore): {results}")
 
@@ -55,4 +57,4 @@ async def main_3():
 if __name__ == '__main__':
     with time_it(label="Total execution time of the program"):
         asyncio.run(main_3())
-        print("There are two tasks, both taking 5 second. Is not the asynchronous run it would take 10 seconds.")
+        print("There are two tasks, both taking 5 second. If not the asynchronous run it would take 10 seconds.")
