@@ -1,0 +1,42 @@
+import asyncio
+from argparse import ArgumentParser
+from asyncio import Semaphore
+from httpx import AsyncClient
+
+from samples.url_fetcher.models import UrlFetchedData
+from samples.utils.timing import time_it
+
+
+async def fetch_url_data(url: str, semaphore: Semaphore) -> UrlFetchedData:
+    assert semaphore is not None
+    async with semaphore:
+        async with AsyncClient() as client:
+            response = await client.get(url, timeout=6, follow_redirects=True)
+            return UrlFetchedData(
+                url=url,
+                status_code=response.status_code,
+                content_type=response.headers.get('Content-Type', 'unknown'),
+                content_length=len(response.content)
+            )
+
+
+async def run(urls: list[str], semaphore: Semaphore) -> None:
+    results: list[UrlFetchedData] = await asyncio.gather(
+        *[fetch_url_data(url_, semaphore) for url_ in urls],
+        return_exceptions=True
+    )
+    print(results)
+
+
+if __name__ == '__main__':
+    parser = ArgumentParser(description="A simple URL fetcher.")
+    parser.add_argument('-u', '--urls', nargs='+', type=str, required=True, help='List of URLs to fetch')
+    parser.add_argument('-c', '--concurrency', type=int, default=5, help='Number of concurrent requests')
+    args = parser.parse_args()
+    # Set limitation for concurrent tasks
+    semaphore_ = Semaphore(args.concurrency)
+    # Process URLs
+    print(f"Start processing {len(args.urls)} URLs...")
+    with time_it(label="Duration of the whole process"):
+        asyncio.run(run(args.urls, semaphore_))
+    print("The URLs are processed!")
