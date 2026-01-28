@@ -1,3 +1,9 @@
+"""It's a module for fetching basic information about an address.
+
+Example:
+    >> python fetch.py --urls https://8.8.8.8 https://onet.pl https://mbank.pl --concurrency 5
+"""
+
 import time
 import asyncio
 from argparse import ArgumentParser
