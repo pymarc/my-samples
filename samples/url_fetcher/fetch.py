@@ -1,3 +1,4 @@
+import time
 import asyncio
 from argparse import ArgumentParser
 from asyncio import Semaphore
@@ -8,16 +9,17 @@ from samples.utils.timing import time_it
 
 
 async def fetch_url_data(url: str, semaphore: Semaphore) -> UrlFetchedData:
-    assert semaphore is not None
-    async with semaphore:
-        async with AsyncClient() as client:
-            response = await client.get(url, timeout=6, follow_redirects=True)
-            return UrlFetchedData(
-                url=url,
-                status_code=response.status_code,
-                content_type=response.headers.get('Content-Type', 'unknown'),
-                content_length=len(response.content)
-            )
+    async with semaphore, AsyncClient() as client:
+        t0 = time.perf_counter()
+        response = await client.get(url, timeout=6, follow_redirects=True)
+        response_time: float = round(time.perf_counter() - t0, 3)
+        return UrlFetchedData(
+            url=url,
+            status_code=response.status_code,
+            response_time=response_time,
+            content_type=response.headers.get('Content-Type', 'unknown'),
+            content_length=len(response.content)
+        )
 
 
 async def run(urls: list[str], semaphore: Semaphore) -> None:
