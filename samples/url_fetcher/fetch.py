@@ -29,7 +29,7 @@ async def fetch_url_data(url: str, semaphore: Semaphore) -> UrlFetchedData:
 
 
 async def run(urls: list[str], semaphore: Semaphore) -> None:
-    results: list[UrlFetchedData] = await asyncio.gather(
+    results: tuple[UrlFetchedData] = await asyncio.gather(
         *[fetch_url_data(url_, semaphore) for url_ in urls],
         return_exceptions=True
     )
