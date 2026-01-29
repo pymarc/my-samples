@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  url_fetcher:
+    image: url_fetcher_standalone:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: url_fetcher
+    restart: "no"

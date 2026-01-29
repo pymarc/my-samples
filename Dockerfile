@@ -25,4 +25,5 @@ RUN python3.13 -m pip install --no-cache-dir -r requirements.txt
 
 ENV PYTHONPATH="/app:${PYTHONPATH}"
 
-CMD ["python3.13", "/app/samples/url_fetcher/fetch.py", "-u", "https://8.8.8.8", "https://onet.pl", "https://mbank.pl", "-c", "5"]
+ENTRYPOINT ["python3.13", "/app/samples/url_fetcher/fetch.py"]
+CMD ["-u", "https://8.8.8.8", "https://onet.pl", "https://mbank.pl", "-c", "5"]
