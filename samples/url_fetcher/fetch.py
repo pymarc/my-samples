@@ -63,7 +63,7 @@ def main():
     # Process URLs
     print(f"Start processing {len(args.urls)} URLs...")
     with time_it(label="Duration of the whole process"):
-        asyncio.run(run(args.urls, semaphore_))
+        asyncio.run(run(args.urls, semaphore_, output_jsonl_file=args.output_jsonl_file))
     print("The URLs are processed!")
 
 
