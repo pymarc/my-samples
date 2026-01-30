@@ -25,15 +25,15 @@ def test_url_fetched_data_model():
 
 
 def test_url_fetched_data_model_with_error():
-    address = "https://fake-address-wdu8328q.xd"
+    url = "https://fake-address-wdu8328q.xd"
     expected_error = "[Errno -2] Name or service not known"
     data = UrlFetchedData(
-        url=address,
+        url=url,
         response_time=0.456,
         error=expected_error
     )
 
-    assert data.url == address
+    assert data.url == url
     assert data.status_code is None
     assert isinstance(data.response_time, float)
     assert data.content_type == "unknown"
@@ -64,3 +64,24 @@ async def test_fetch_url_data_success():
         assert result.content_type == "text/plain"
         assert result.content_length == len(expected_response_content)
         assert result.error is None
+
+
+@pytest.mark.asyncio
+async def test_fetch_url_data_error():
+    url = "https://fake-address-2ewd3.xd"
+    error_msg = "[Errno -2] Name or service not known"
+
+    async def handler(request):
+        raise httpx.HTTPError(error_msg)
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        semaphore = Semaphore(2)
+        result = await fetch_url_data(url, semaphore, client)
+        assert result.url == url
+        assert result.status_code is None
+        assert isinstance(result.response_time, float)
+        assert result.response_time >= 0.0
+        assert result.content_type == "unknown"
+        assert result.content_length == 0
+        assert result.error == error_msg
