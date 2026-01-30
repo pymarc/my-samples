@@ -52,7 +52,7 @@ async def run(urls: list[str], semaphore: Semaphore, output_jsonl_file=None) -> 
             print("Results are saved to", output_jsonl_file)
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser(description="A simple URL fetcher.")
     parser.add_argument('-u', '--urls', nargs='+', type=str, required=True, help='List of URLs to fetch')
     parser.add_argument('-c', '--concurrency', type=int, default=5, help='Number of concurrent requests')
@@ -65,3 +65,7 @@ if __name__ == '__main__':
     with time_it(label="Duration of the whole process"):
         asyncio.run(run(args.urls, semaphore_))
     print("The URLs are processed!")
+
+
+if __name__ == '__main__':
+    main()
