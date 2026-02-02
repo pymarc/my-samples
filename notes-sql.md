@@ -478,3 +478,182 @@ Therefore:
 ## 14. One-sentence summary
 
 > Foreign keys provide strong consistency via row-level locking, but introduce write overhead and coupling, so they should be used deliberately rather than by default.
+
+
+# PostgreSQL — Day 3: Transactions, Locks & Isolation (Summary Notes)
+
+## 1. Transactions basics
+A transaction groups multiple SQL statements into an atomic unit:
+- all statements succeed → `COMMIT`
+- any statement fails → `ROLLBACK`
+
+```sql
+BEGIN;
+-- SQL statements
+COMMIT;
+````
+
+If an error occurs:
+
+```sql
+ROLLBACK;
+```
+
+---
+
+## 2. Aborted transaction state (CRITICAL)
+
+If **any statement inside a transaction fails**:
+
+* the entire transaction enters **aborted state**
+* PostgreSQL ignores all further commands
+* error code: `SQLSTATE 25P02`
+
+Only way to recover:
+
+```sql
+ROLLBACK;
+```
+
+> After the first error, nothing runs until you rollback.
+
+This applies equally to:
+
+* pgAdmin
+* psql
+* backend applications
+* ORMs
+
+---
+
+## 3. MVCC (Multi-Version Concurrency Control)
+
+PostgreSQL uses MVCC:
+
+* `SELECT` does not block `UPDATE`
+* readers see a consistent snapshot
+* writers create new row versions
+
+---
+
+## 4. Isolation levels (practical meaning)
+
+### READ COMMITTED (default)
+
+* each statement sees latest committed data
+* same `SELECT` may return different results in one transaction
+* allows non-repeatable reads
+
+Use for:
+
+* typical CRUD
+* most API endpoints
+
+---
+
+### REPEATABLE READ
+
+* snapshot taken at transaction start
+* all reads see the same data
+* prevents non-repeatable reads
+* still allows write skew
+
+Use for:
+
+* reports
+* multi-step read logic
+* stable view of data
+
+---
+
+### SERIALIZABLE
+
+* guarantees serial execution effect
+* prevents write skew
+* may abort transactions with `serialization_failure`
+* requires retry logic
+
+Use for:
+
+* critical business invariants
+* complex concurrent logic
+
+---
+
+## 5. Row-level locking
+
+PostgreSQL locks **rows, not columns**.
+
+### `UPDATE`
+
+* implicitly acquires a `FOR UPDATE` row lock
+
+### `SELECT ... FOR UPDATE`
+
+* explicitly locks selected rows
+* blocks other updates and deletes
+* does not block plain SELECTs
+
+```sql
+SELECT * FROM users WHERE id = 1 FOR UPDATE;
+```
+
+---
+
+## 6. When to use SELECT FOR UPDATE
+
+### Not needed when:
+
+```sql
+UPDATE users SET email='x' WHERE id=1;
+```
+
+### Needed when:
+
+* read → decide → write pattern
+* preventing lost updates
+
+```sql
+BEGIN;
+SELECT balance FROM accounts WHERE id=1 FOR UPDATE;
+UPDATE accounts SET balance = balance - 10 WHERE id=1;
+COMMIT;
+```
+
+---
+
+## 7. Foreign Keys and locks (recap)
+
+* FK checks acquire `KEY SHARE` locks on parent rows
+* parent row is locked, not the whole table
+* high concurrency + FK can cause lock contention
+
+---
+
+## 8. Deadlocks
+
+Deadlocks occur when transactions lock resources in different orders.
+
+PostgreSQL:
+
+* detects deadlocks automatically
+* aborts one transaction
+
+Avoid by:
+
+* consistent lock ordering
+* short transactions
+* minimal locking
+
+---
+
+## 9. Backend rule of thumb
+
+> Always rollback on error before reusing a connection.
+
+---
+
+## 10. One-sentence takeaway
+
+> Isolation levels define how stable your view of data is during a transaction, while row-level locks define who is allowed to modify data concurrently.
+
