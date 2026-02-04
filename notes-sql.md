@@ -657,3 +657,201 @@ Avoid by:
 
 > Isolation levels define how stable your view of data is during a transaction, while row-level locks define who is allowed to modify data concurrently.
 
+
+# Day 4 – PostgreSQL: JSONB, Event Tables & GIN Indexes
+
+## JSON vs JSONB
+
+### JSON
+- Stored as text
+- Parsed on every read
+- Slow to query
+- Rarely used in practice
+
+### JSONB (recommended)
+- Binary format
+- Parsed on write
+- Fast to query
+- Supports indexing (GIN)
+
+**Rule:** If you store JSON in PostgreSQL → always use `JSONB`.
+
+---
+
+## Basic JSONB operators
+
+Assuming column `data JSONB`:
+
+- Access field:
+  ```sql
+  data -> 'status'
+````
+
+* Access field as text:
+
+  ```sql
+  data ->> 'status'
+  ```
+* Nested access:
+
+  ```sql
+  data -> 'user' ->> 'email'
+  ```
+* Containment (most common):
+
+  ```sql
+  data @> '{"status":"error"}'
+  ```
+
+---
+
+## Event table pattern
+
+Event tables are typically:
+
+* Append-only
+* Schema-flexible
+* Optimized for writes and reads, not strict relations
+
+Example:
+
+```sql
+CREATE TABLE user_event (
+    id BIGSERIAL PRIMARY KEY,
+    user_name TEXT NOT NULL,
+    event_type TEXT NOT NULL CHECK (event_type IN ('general', 'error')),
+    data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+### Key design decisions
+
+* No foreign keys (intentional, for performance)
+* `JSONB` for flexible payload
+* `TIMESTAMPTZ` for correct time handling (UTC)
+* `CHECK` instead of ENUM for easier evolution
+
+---
+
+## TIMESTAMP vs TIMESTAMPTZ
+
+* `TIMESTAMP` → **not timezone-aware**
+* `TIMESTAMPTZ` → stores an absolute moment in time (internally UTC)
+
+**Best practice for backend/event tables:**
+
+```sql
+created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+---
+
+## Indexing strategy for event tables
+
+### Why multiple indexes may be needed
+
+Different queries have different access patterns. One index rarely fits all.
+
+---
+
+### Index for per-user latest events (most common)
+
+```sql
+CREATE INDEX user_event_user_created_idx
+ON user_event (user_name, created_at DESC);
+```
+
+Optimized for:
+
+```sql
+WHERE user_name = ?
+ORDER BY created_at DESC
+LIMIT N;
+```
+
+---
+
+### Index for global latest events (optional)
+
+```sql
+CREATE INDEX user_event_created_idx
+ON user_event (created_at DESC);
+```
+
+Optimized for:
+
+```sql
+ORDER BY created_at DESC
+LIMIT N;
+```
+
+---
+
+## Why `DESC` in indexes matters
+
+* Index direction should match the most common `ORDER BY`
+* `created_at DESC` is ideal for “latest events” queries
+* PostgreSQL *can* scan indexes backwards, but not always optimally
+
+**Rule:** Design indexes for the most common `ORDER BY + LIMIT`.
+
+---
+
+## GIN index on JSONB
+
+### What GIN does
+
+* GIN = **inverted index**
+* Indexes all keys and values inside JSONB
+* Excellent for containment queries (`@>`, `?`)
+
+Example:
+
+```sql
+CREATE INDEX user_event_data_gin_idx
+ON user_event USING GIN (data);
+```
+
+---
+
+### Downsides of full GIN on JSONB
+
+* Large index size
+* Slower INSERT/UPDATE
+* High maintenance cost
+
+---
+
+### When full GIN makes sense
+
+* Many different JSON fields queried
+* Unknown query patterns
+* Moderate write throughput
+
+---
+
+### Better alternatives (often preferred)
+
+#### 1. Extract frequently queried fields to columns
+
+```sql
+status TEXT,
+data JSONB
+```
+
+#### 2. Partial GIN index
+
+```sql
+CREATE INDEX user_event_error_data_gin_idx
+ON user_event USING GIN (data)
+WHERE event_type = 'error';
+```
+
+#### 3. Expression index
+
+```sql
+CREATE INDEX user_event_status_idx
+ON user_event ((data ->> 'status'));
+```
+
