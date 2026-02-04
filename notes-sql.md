@@ -685,7 +685,7 @@ Assuming column `data JSONB`:
 - Access field:
   ```sql
   data -> 'status'
-````
+  ```
 
 * Access field as text:
 
@@ -854,4 +854,241 @@ WHERE event_type = 'error';
 CREATE INDEX user_event_status_idx
 ON user_event ((data ->> 'status'));
 ```
+
+---
+
+# Day 5 – PostgreSQL: Pagination, Batching, COPY & Statistics
+
+## Pagination
+
+### OFFSET pagination (anti-pattern on large tables)
+
+```sql
+SELECT *
+FROM user_event
+ORDER BY created_at DESC
+LIMIT 50 OFFSET 100000;
+````
+
+**Problems**
+
+* Execution time grows linearly with OFFSET
+* PostgreSQL must scan and discard skipped rows
+* Unstable results when new rows are inserted
+
+OFFSET is acceptable only for:
+
+* small tables
+* admin tools
+* one-off reports
+
+---
+
+### Cursor-based (keyset) pagination – recommended
+
+```sql
+SELECT *
+FROM user_event
+WHERE created_at < :cursor_created_at
+ORDER BY created_at DESC
+LIMIT 50;
+```
+
+**Benefits**
+
+* O(1) performance per page
+* Stable under concurrent inserts
+* Ideal for feeds and event tables
+
+---
+
+## Cursor with tie-breaker (critical)
+
+`created_at` is not unique → pagination breaks without a tie-breaker.
+
+Correct pattern:
+
+```sql
+ORDER BY created_at DESC, id DESC
+```
+
+Cursor condition:
+
+```sql
+WHERE (created_at, id) < (:cursor_created_at, :cursor_id)
+```
+
+Equivalent to:
+
+```sql
+created_at < :cursor_created_at
+OR (created_at = :cursor_created_at AND id < :cursor_id)
+```
+
+**Result**
+
+* No missing rows
+* No duplicates
+* Deterministic ordering
+
+---
+
+## Indexes for cursor pagination
+
+Per-user event feed:
+
+```sql
+CREATE INDEX user_event_user_created_id_idx
+ON user_event (user_name, created_at DESC, id DESC);
+```
+
+Global event feed:
+
+```sql
+CREATE INDEX user_event_created_id_idx
+ON user_event (created_at DESC, id DESC);
+```
+
+Indexes must match:
+
+* WHERE conditions
+* ORDER BY direction
+* Cursor columns
+
+---
+
+## Batching
+
+### Why batching matters
+
+* Smaller transactions
+* Less memory usage
+* Reduced locking
+* Easier retries
+
+Typical pattern:
+
+```sql
+WHERE id > last_id
+ORDER BY id
+LIMIT 1000;
+```
+
+Used for:
+
+* ETL
+* ML pipelines
+* exports
+* background processing
+
+---
+
+## Bulk inserts
+
+### INSERT vs COPY
+
+| Method           | Speed   | Use case                   |
+| ---------------- |---------| -------------------------- |
+| Single INSERT    | slow    | CRUD                       |
+| Multi-row INSERT | medium  | small batches              |
+| COPY             | fastest | events, logs, ML ingestion |
+
+---
+
+## COPY with CSV
+
+```sql
+COPY user_event (user_name, event_type, data)
+FROM STDIN WITH (FORMAT csv, HEADER true);
+```
+
+Notes:
+
+* CSV must be valid
+* JSONB must be quoted
+* COPY is transactional
+* DEFAULT columns are auto-filled
+
+Use `\copy` for local files.
+
+---
+
+## ANALYZE & statistics
+
+### What ANALYZE does
+
+* Collects table and column statistics
+* Updates planner estimates
+* Does NOT build or rebuild indexes
+
+Planner decisions depend on:
+
+* row count
+* value distribution
+* selectivity
+
+---
+
+### Autovacuum vs manual ANALYZE
+
+Autovacuum:
+
+* runs automatically
+* handles most cases
+
+Manual ANALYZE recommended after:
+
+* bulk INSERT / COPY
+* ETL jobs
+* large data migrations
+* debugging bad query plans
+
+---
+
+## pg_stats
+
+`pg_stats` shows what the planner knows:
+
+```sql
+SELECT
+  attname,
+  n_distinct,
+  most_common_vals,
+  most_common_freqs
+FROM pg_stats
+WHERE tablename = 'user_event';
+```
+
+Key fields:
+
+* `n_distinct` → number of unique values
+* `most_common_vals` → frequent values
+* `histogram_bounds` → range estimates
+
+---
+
+## STATISTICS target
+
+```sql
+ALTER TABLE user_event
+ALTER COLUMN user_name SET STATISTICS 1000;
+```
+
+* Controls accuracy of statistics
+* Default: 100
+* Higher value = better plans, slower ANALYZE
+* Useful for skewed distributions
+
+---
+
+## Key principles (Day 5 takeaways)
+
+* OFFSET does not scale
+* Cursor pagination requires a tie-breaker
+* Indexes must match query shape
+* COPY is the fastest ingestion method
+* Planner relies on statistics, not intuition
+* ANALYZE teaches the planner
+* Event tables favor write speed and simple access patterns
+
 
