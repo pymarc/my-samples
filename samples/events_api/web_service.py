@@ -1,10 +1,8 @@
 
 from fastapi import FastAPI
 
+from .api.v1 import router as api_v1_router
+
 app = FastAPI()
 
-
-@app.get("/events")
-async def get_events():
-    """Get events with pagination/cursor."""
-    return {"message": "This is a placeholder for the events API."}
+app.include_router(api_v1_router, prefix="/api/v1")
