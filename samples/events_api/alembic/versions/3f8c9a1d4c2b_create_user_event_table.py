@@ -1,6 +1,6 @@
 """Create user_event table
 
-Revision ID: 0001_create_user_event_table
+Revision ID: 3f8c9a1d4c2b
 Revises:
 Create Date: 2026-02-06 17:00
 """
@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '0001_create_user_event_table'
+revision = '3f8c9a1d4c2b'
 down_revision = None
 branch_labels = None
 depends_on = None
