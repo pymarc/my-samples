@@ -1,17 +1,14 @@
 
-import os
 import re
 import base64
 import asyncpg
 import logging
 from typing import Optional
+from fastapi import APIRouter, Query, Depends, HTTPException
 
-from fastapi import APIRouter, Query, HTTPException
+from ..db.pool import get_pool
 
 router = APIRouter()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-assert DATABASE_URL is not None, "DATABASE_URL environment variable is not set!"
 
 
 def decode_cursor(encoded_cursor: str) -> str:
@@ -23,31 +20,38 @@ def validate_cursor(plain_text_cursor: str) -> None:
     assert re.fullmatch(pattern, plain_text_cursor), f"The cursor value '{plain_text_cursor}' is not valid!"
 
 
+def validate_limit(limit: int) -> None:
+    assert isinstance(limit, int), f"The limit value '{limit}' is not an integer!"
+    assert limit > 0, f"The limit value '{limit}' has to be greater than 0!"
+
+
 @router.get("/events")
-async def get_events(limit: int = Query(10, ge=1, le=200), cursor: Optional[str] = Query(default=None)):
+async def get_events(
+        limit: int = Query(10, ge=1, le=200),
+        cursor: Optional[str] = Query(default=None),
+        pool: asyncpg.Pool = Depends(get_pool),
+):
     """Get events with pagination/cursor.
 
     :param limit: Number of events to return
     :param cursor: Encoded cursor showing where to start getting events from DB.
         Decoded form is (occurred_at, id_of_event).
+    :param pool: Connection pool.
     """
     try:
         sql_query = "SELECT * FROM user_event "
         if cursor:
             decoded_cursor: str = decode_cursor(cursor)
             validate_cursor(decoded_cursor)
+            validate_limit(limit)
             sql_query += f"WHERE (occurred_at, id) < {decoded_cursor} "
         sql_query += f"ORDER BY occurred_at DESC, id DESC LIMIT {limit}"
 
         # SQL query here
-        pool = await asyncpg.create_pool(dsn=DATABASE_URL, min_size=1, max_size=5)
-        try:
-            async with pool.acquire() as conn:
-                async with conn.transaction() as txn:
-                    rows = await txn.fetch(sql_query)
-        finally:
-            await pool.close()
-
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(sql_query)
+            print(rows)
+            # TODO: Finish here
 
         return {"limit": limit, "items": [
             {"test": 1}
