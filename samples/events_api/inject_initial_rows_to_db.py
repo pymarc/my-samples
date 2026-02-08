@@ -12,7 +12,6 @@ import asyncpg
 
 
 async def inject_initial_rows_from_csv(csv_path: str, database_url: str) -> None:
-    print(database_url)
     pool = await asyncpg.create_pool(dsn=database_url, min_size=1, max_size=5)
     try:
         async with pool.acquire() as conn:
