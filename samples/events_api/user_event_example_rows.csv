@@ -1,0 +1,11 @@
+user_name,event_type,data,occurred_at
+marcin,general,"{""action"":""login"",""ip"":""192.168.1.10""}",2026-02-07T09:00:00Z
+marcin,error,"{""action"":""login"",""error_code"":401,""reason"":""invalid_password""}",2026-02-07T09:01:15Z
+anna,general,"{""action"":""page_view"",""page"":""/dashboard""}",2026-02-07T09:05:30Z
+anna,general,"{""action"":""update_profile"",""field"":""email""}",2026-02-07T09:07:00Z
+piotr,error,"{""action"":""payment"",""error_code"":502,""provider"":""stripe""}",2026-02-07T09:10:45Z
+piotr,general,"{""action"":""retry_payment"",""attempt"":2}",2026-02-07T09:11:30Z
+kasia,general,"{""action"":""logout""}",2026-02-07T09:15:00Z
+kasia,error,"{""action"":""file_upload"",""error"":""file_too_large""}",2026-02-07T09:16:20Z
+admin,general,"{""action"":""user_created"",""target_user"":""jan""}",2026-02-07T09:20:00Z
+admin,error,"{""action"":""user_delete"",""error"":""permission_denied""}",2026-02-07T09:22:10Z

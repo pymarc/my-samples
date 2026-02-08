@@ -1,29 +1,38 @@
+"""A script which adds initial rows of user-events to a database.
 
+Usage:
+>> python samples/events_api\inject_initial_rows_to_db.py \
+--csv-path user_event_example_rows.csv \
+--db-user USER --db-password PASS \
+--db-name DB_NAME
+"""
 import argparse
 import asyncio
 import asyncpg
 
 
 async def inject_initial_rows_from_csv(csv_path: str, database_url: str) -> None:
-    pool = asyncpg.create_pool(database_url, minsize=1, maxsize=5)
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            with open(csv_path) as csv_file:
-                await conn.copy_to_table(
-                    'user_event',
-                    source=csv_file,
-                    format='csv',
-                    header=True,
-                    columns=('user_name', 'event_type', 'data', 'occurred_at')
-                )
-    await pool.close()
-
+    print(database_url)
+    pool = await asyncpg.create_pool(dsn=database_url, min_size=1, max_size=5)
+    try:
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                with open(csv_path, 'rb') as csv_file:
+                    await conn.copy_to_table(
+                        'user_event',
+                        source=csv_file,
+                        format='csv',
+                        header=True,
+                        columns=('user_name', 'event_type', 'data', 'occurred_at')
+                    )
+    finally:
+        await pool.close()
 
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument(
-        '--csv_path', type=str, required=True,
+        '--csv-path', type=str, required=True,
         help='Path to csv file containing user events that we want to inject into the database.'
     )
     arg_parser.add_argument('--db-user', type=str, required=True)
@@ -34,8 +43,9 @@ if __name__ == '__main__':
     args = arg_parser.parse_args()
 
     print("Starting injecting initial rows of user-events to database...")
+    db_url_ = f"postgresql://{args.db_user}:{args.db_password}@{args.db_host}:{args.db_port}/{args.db_name}"
     asyncio.run(inject_initial_rows_from_csv(
         args.csv_path,
-        f"postgresql://{args.db_user}:{args.db_password}@{args.db_host}:{args.db_port}/{args.db_name}"
+        db_url_
     ))
     print("Injection complete!")
