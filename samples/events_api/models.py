@@ -16,6 +16,14 @@ class EventCursor(BaseModel):
         cursor_dict = json.loads(cursor_json_text)
         return cls(**cursor_dict)
 
+    def get_cursor_base64(self) -> str:
+        occurred_at_str = self.occurred_at.isoformat()
+        data = {
+            "occurred_at": occurred_at_str,
+            "event_id": self.event_id,
+        }
+        return base64.b64encode(json.dumps(data).encode('utf-8')).decode('utf-8')
+
     @field_validator("occurred_at")
     @classmethod
     def ensure_timezone(cls, v: datetime.datetime) -> datetime.datetime:

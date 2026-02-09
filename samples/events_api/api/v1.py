@@ -1,7 +1,7 @@
 import datetime
 import asyncpg
 import logging
-from typing import Optional
+from typing import Optional, Any
 from fastapi import APIRouter, Query, Depends, HTTPException
 
 from ..db.pool import get_pool
@@ -25,7 +25,7 @@ async def get_events(
     """
     try:
         sql_query = """
-        SELECT id, user_name, event_type, data, occurred_at
+        SELECT id AS event_id, user_name, event_type, data, occurred_at
         FROM user_event
         WHERE
           ($1::timestamptz IS NULL OR (occurred_at, id) < ($1, $2))
@@ -39,13 +39,23 @@ async def get_events(
             occurred_at = event_cursor.occurred_at
             event_id = event_cursor.event_id
 
-        result = {
+        result: dict[str, Any] = {
             "limit": limit,
-            "items": []
+            "items": [],
+            "next_cursor": None
         }
         async with pool.acquire() as conn:
             rows = await conn.fetch(sql_query, occurred_at, event_id, limit)
             result['items'] = [dict(row) for row in rows]
+
+        if result['items']:
+            next_cursor_occurred_at = result["items"][-1]["occurred_at"]
+            next_cursor_event_id = result["items"][-1]["event_id"]
+            next_event_cursor = EventCursor(
+                occurred_at=next_cursor_occurred_at,
+                event_id=next_cursor_event_id
+            )
+            result["next_cursor"] = next_event_cursor.get_cursor_base64()
 
         return result
     except Exception as e:
