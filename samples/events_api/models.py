@@ -10,18 +10,18 @@ class EventCursor(BaseModel):
     occurred_at: datetime.datetime
     event_id: int = Field(gt=0)
 
+    @classmethod
+    def generate_from_base64(cls, base64_data: str) -> 'EventCursor':
+        cursor_json_text = base64.b64decode(base64_data.encode('utf-8')).decode('utf-8')
+        cursor_dict = json.loads(cursor_json_text)
+        return cls(**cursor_dict)
+
     @field_validator("occurred_at")
     @classmethod
     def ensure_timezone(cls, v: datetime.datetime) -> datetime.datetime:
         if v.tzinfo is None:
             raise ValueError("occurred_at must be timezone-aware")
         return v
-
-    @classmethod
-    def generate_from_base64(cls, base64_data: str) -> 'EventCursor':
-        cursor_json_text = base64.b64decode(base64_data.encode('utf-8')).decode('utf-8')
-        cursor_dict = json.loads(cursor_json_text)
-        return cls(**cursor_dict)
 
     @staticmethod
     def convert_postgres_timestamptz_to_datetime(datetime_text: str) -> datetime.datetime:
