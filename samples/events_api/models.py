@@ -12,7 +12,7 @@ class EventCursor(BaseModel):
 
     @classmethod
     def generate_from_base64(cls, base64_data: str) -> 'EventCursor':
-        cursor_json_text = base64.b64decode(base64_data.encode('utf-8')).decode('utf-8')
+        cursor_json_text = base64.urlsafe_b64decode(base64_data.encode('utf-8')).decode('utf-8')
         cursor_dict = json.loads(cursor_json_text)
         return cls(**cursor_dict)
 
@@ -22,7 +22,7 @@ class EventCursor(BaseModel):
             "occurred_at": occurred_at_str,
             "event_id": self.event_id,
         }
-        return base64.b64encode(json.dumps(data).encode('utf-8')).decode('utf-8')
+        return base64.urlsafe_b64encode(json.dumps(data).encode('utf-8')).decode('utf-8')
 
     @field_validator("occurred_at")
     @classmethod

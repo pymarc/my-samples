@@ -17,7 +17,7 @@ def test_generate_from_base64():
         "occurred_at": expected_occurred_at.isoformat(),
         "event_id": 2345
     }
-    cursor_base64 = base64.b64encode(json.dumps(payload).encode('utf-8')).decode('utf-8')
+    cursor_base64 = base64.urlsafe_b64encode(json.dumps(payload).encode('utf-8')).decode('utf-8')
 
     event_cursor = EventCursor.generate_from_base64(cursor_base64)
     assert event_cursor.occurred_at == expected_occurred_at
