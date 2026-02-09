@@ -1,28 +1,13 @@
-
-import re
-import base64
+import datetime
 import asyncpg
 import logging
 from typing import Optional
 from fastapi import APIRouter, Query, Depends, HTTPException
 
 from ..db.pool import get_pool
+from ..models import EventCursor
 
 router = APIRouter()
-
-
-def decode_cursor(encoded_cursor: str) -> str:
-    return base64.b64decode(encoded_cursor.encode('utf-8')).decode('utf-8')
-
-
-def validate_cursor(plain_text_cursor: str) -> None:
-    pattern = r'^\("(?P<dt>\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01]) (?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{1,6}(?:Z|[+-](?:0\d|1\d|2[0-3])(?::?[0-5]\d)?)?)", (?P<n>[1-9]\d*)\)$'
-    assert re.fullmatch(pattern, plain_text_cursor), f"The cursor value '{plain_text_cursor}' is not valid!"
-
-
-def validate_limit(limit: int) -> None:
-    assert isinstance(limit, int), f"The limit value '{limit}' is not an integer!"
-    assert limit > 0, f"The limit value '{limit}' has to be greater than 0!"
 
 
 @router.get("/events")
@@ -39,17 +24,24 @@ async def get_events(
     :param pool: Connection pool.
     """
     try:
-        sql_query = "SELECT * FROM user_event "
+        sql_query = """
+        SELECT id, user_name, event_type, data, occurred_at
+        FROM user_event
+        WHERE
+          ($1::timestamptz IS NULL OR (occurred_at, id) < ($1, $2))
+        ORDER BY occurred_at DESC, id DESC
+        LIMIT $3
+        """
+        occurred_at: Optional[datetime.datetime] = None
+        event_id: Optional[int] = None
         if cursor:
-            decoded_cursor: str = decode_cursor(cursor)
-            validate_cursor(decoded_cursor)
-            validate_limit(limit)
-            sql_query += f"WHERE (occurred_at, id) < {decoded_cursor} "
-        sql_query += f"ORDER BY occurred_at DESC, id DESC LIMIT {limit}"
+            event_cursor = EventCursor.generate_from_base64(cursor)
+            occurred_at = event_cursor.occurred_at
+            event_id = event_cursor.event_id
 
         # SQL query here
         async with pool.acquire() as conn:
-            rows = await conn.fetch(sql_query)
+            rows = await conn.fetch(sql_query, occurred_at, event_id, limit)
             print(rows)
             # TODO: Finish here
 
