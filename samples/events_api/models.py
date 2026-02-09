@@ -1,26 +1,27 @@
-import re
+"""Project models."""
+import json
 import base64
 import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class EventCursor(BaseModel):
+    """SQL cursor model."""
     occurred_at: datetime.datetime
-    event_id: int
+    event_id: int = Field(gt=0)
+
+    @field_validator("occurred_at")
+    @classmethod
+    def ensure_timezone(cls, v: datetime.datetime) -> datetime.datetime:
+        if v.tzinfo is None:
+            raise ValueError("occurred_at must be timezone-aware")
+        return v
 
     @classmethod
     def generate_from_base64(cls, base64_data: str) -> 'EventCursor':
-        cursor_text = base64.b64decode(base64_data.encode('utf-8')).decode('utf-8')
-        cls.validate_cursor_text(cursor_text)
-        occurred_at_text, event_id_text = cursor_text.split(', ', 1)
-        occurred_at: datetime.datetime = cls.convert_postgres_timestamptz_to_datetime(occurred_at_text)
-        event_id = int(event_id_text)
-        return cls(occurred_at=occurred_at, event_id=event_id)
-
-    @staticmethod
-    def validate_cursor_text(plain_text_cursor: str) -> None:
-        pattern = r'^"(?P<dt>\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01]) (?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{1,6}(?:Z|[+-](?:0\d|1\d|2[0-3])(?::?[0-5]\d)?)?)", (?P<n>[1-9]\d*)$'
-        assert re.fullmatch(pattern, plain_text_cursor), f"The cursor text value '{plain_text_cursor}' is not valid!"
+        cursor_json_text = base64.b64decode(base64_data.encode('utf-8')).decode('utf-8')
+        cursor_dict = json.loads(cursor_json_text)
+        return cls(**cursor_dict)
 
     @staticmethod
     def convert_postgres_timestamptz_to_datetime(datetime_text: str) -> datetime.datetime:
@@ -28,3 +29,13 @@ class EventCursor(BaseModel):
         if datetime_text.endswith("Z"):
             datetime_text = datetime_text[:-1] + "+00:00"
         return datetime.datetime.fromisoformat(datetime_text)
+
+    @staticmethod
+    def convert_datetime_to_postgres_timestamptz(datetime_tz: datetime.datetime) -> str:
+        if datetime_tz.tzinfo is None:
+            raise ValueError("datetime must be timezone-aware")
+        datetime_text_isoformat = datetime_tz.isoformat()
+        datetime_tz_text = datetime_text_isoformat.replace("T", " ", 1)
+        if datetime_tz_text.endswith("+00:00"):
+            datetime_tz_text = datetime_tz_text[:-6] + "Z"
+        return datetime_tz_text
