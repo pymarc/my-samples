@@ -39,15 +39,15 @@ async def get_events(
             occurred_at = event_cursor.occurred_at
             event_id = event_cursor.event_id
 
-        # SQL query here
+        result = {
+            "limit": limit,
+            "items": []
+        }
         async with pool.acquire() as conn:
             rows = await conn.fetch(sql_query, occurred_at, event_id, limit)
-            print(rows)
-            # TODO: Finish here
+            result['items'] = [dict(row) for row in rows]
 
-        return {"limit": limit, "items": [
-            {"test": 1}
-        ]}
+        return result
     except Exception as e:
         logging.error(e)
         raise HTTPException(status_code=400, detail=str(e))
