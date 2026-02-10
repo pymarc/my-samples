@@ -10,6 +10,13 @@ class EventCursor(BaseModel):
     occurred_at: datetime.datetime
     event_id: int = Field(gt=0)
 
+    @field_validator("occurred_at")
+    @classmethod
+    def ensure_timezone(cls, v: datetime.datetime) -> datetime.datetime:
+        if v.tzinfo is None:
+            raise ValueError("occurred_at must be timezone-aware")
+        return v
+
     @classmethod
     def generate_from_base64(cls, base64_data: str) -> 'EventCursor':
         cursor_json_text = base64.urlsafe_b64decode(base64_data.encode('utf-8')).decode('utf-8')
@@ -23,27 +30,3 @@ class EventCursor(BaseModel):
             "event_id": self.event_id,
         }
         return base64.urlsafe_b64encode(json.dumps(data).encode('utf-8')).decode('utf-8')
-
-    @field_validator("occurred_at")
-    @classmethod
-    def ensure_timezone(cls, v: datetime.datetime) -> datetime.datetime:
-        if v.tzinfo is None:
-            raise ValueError("occurred_at must be timezone-aware")
-        return v
-
-    @staticmethod
-    def convert_postgres_timestamptz_to_datetime(datetime_text: str) -> datetime.datetime:
-        datetime_text = datetime_text.replace(" ", "T", 1)
-        if datetime_text.endswith("Z"):
-            datetime_text = datetime_text[:-1] + "+00:00"
-        return datetime.datetime.fromisoformat(datetime_text)
-
-    @staticmethod
-    def convert_datetime_to_postgres_timestamptz(datetime_tz: datetime.datetime) -> str:
-        if datetime_tz.tzinfo is None:
-            raise ValueError("datetime must be timezone-aware")
-        datetime_text_isoformat = datetime_tz.isoformat()
-        datetime_tz_text = datetime_text_isoformat.replace("T", " ", 1)
-        if datetime_tz_text.endswith("+00:00"):
-            datetime_tz_text = datetime_tz_text[:-6] + "Z"
-        return datetime_tz_text
