@@ -2,6 +2,7 @@
 import json
 import base64
 import datetime
+from typing import Literal, Optional, Any
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -30,3 +31,24 @@ class EventCursor(BaseModel):
             "event_id": self.event_id,
         }
         return base64.urlsafe_b64encode(json.dumps(data).encode('utf-8')).decode('utf-8')
+
+
+class Event(BaseModel):
+    event_id: int = Field(gt=0)
+    user_name: str
+    event_type: Literal["general", "error"]
+    data: dict[str, Any] = Field(default_factory=dict)
+    occurred_at: datetime.datetime
+
+    @field_validator("occurred_at")
+    @classmethod
+    def ensure_timezone(cls, v: datetime.datetime) -> datetime.datetime:
+        if v.tzinfo is None:
+            raise ValueError("occurred_at must be timezone-aware")
+        return v
+
+
+class EventsResponse(BaseModel):
+    limit: int = Field(default=5, gt=0)
+    items: list[Event] = Field(default_factory=list)
+    next_cursor: Optional[str]

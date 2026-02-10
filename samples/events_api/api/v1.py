@@ -1,16 +1,16 @@
 import datetime
 import asyncpg
 import logging
-from typing import Optional, Any
+from typing import Optional
 from fastapi import APIRouter, Query, Depends, HTTPException
 
 from ..db.pool import get_pool
-from ..models import EventCursor
+from ..models import EventCursor, EventsResponse, Event
 
 router = APIRouter()
 
 
-@router.get("/events")
+@router.get("/events", response_model=EventsResponse)
 async def get_events(
         limit: int = Query(10, ge=1, le=200),
         cursor: Optional[str] = Query(default=None),
@@ -39,25 +39,26 @@ async def get_events(
             occurred_at = event_cursor.occurred_at
             event_id = event_cursor.event_id
 
-        result: dict[str, Any] = {
-            "limit": limit,
-            "items": [],
-            "next_cursor": None
-        }
         async with pool.acquire() as conn:
             rows = await conn.fetch(sql_query, occurred_at, event_id, limit)
-            result['items'] = [dict(row) for row in rows]
+            items: list[Event] = [Event(**dict(row)) for row in rows]
 
-        if result['items']:
-            next_cursor_occurred_at = result["items"][-1]["occurred_at"]
-            next_cursor_event_id = result["items"][-1]["event_id"]
+        next_cursor: Optional[str] = None
+        if items:
+            last_event: Event = items[-1]
             next_event_cursor = EventCursor(
-                occurred_at=next_cursor_occurred_at,
-                event_id=next_cursor_event_id
+                occurred_at=last_event.occurred_at,
+                event_id=last_event.event_id
             )
-            result["next_cursor"] = next_event_cursor.get_cursor_base64()
+            next_cursor = next_event_cursor.get_cursor_base64()
 
-        return result
-    except Exception as e:
-        logging.error(e)
+        return EventsResponse(
+            limit=limit,
+            items=items,
+            next_cursor=next_cursor
+        )
+    except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logging.exception("Unhandled error in GET /events")
+        raise HTTPException(status_code=500, detail="Internal server error")
