@@ -1,8 +1,7 @@
-import os
-
+import tiktoken
 from openai import OpenAI
 
-OPEN_AI_API_KEY = os.getenv("OPEN_AI_API_KEY")
+from . import OPEN_AI_API_KEY
 
 
 def open_ai_embedding(text: str) -> list[float]:
@@ -12,11 +11,11 @@ def open_ai_embedding(text: str) -> list[float]:
         model='text-embedding-3-small',
         input=text
     )
+    print(embedding_vector)
     return embedding_vector.data[0].embedding
 
 
-if __name__ == '__main__':
-    original_text = "Authentication tokens expire after 15 minutes."
-    embedding_vector_list = open_ai_embedding(original_text)
-    print(embedding_vector_list)
-    print(f"Embedding length: {len(embedding_vector_list)}")
+def get_tokens(text: str) -> list[int]:
+    encoder = tiktoken.encoding_for_model('text-embedding-3-small')
+    result = encoder.encode(text)
+    return result
