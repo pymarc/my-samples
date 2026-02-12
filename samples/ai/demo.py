@@ -47,4 +47,4 @@ if __name__ == '__main__':
     print("Question: ", query)
     print(f"Top {k} results:")
     for doc, score in ranked[:k]:
-        print(f"{doc}: {score}")
+        print(f"{doc}: {score:.3f}")
