@@ -16,37 +16,59 @@ if __name__ == '__main__':
         "The database runs on PostgreSQL."
     ]
 
-    doc_response = client.embeddings.create(
+    # 1) Embed docs (batch)
+    doc_resp = client.embeddings.create(
         model="text-embedding-3-small",
         input=docs
     )
+    doc_embeddings = [d.embedding for d in doc_resp.data]
 
-    doc_embeddings = [doc_data.embedding for doc_data in doc_response.data]
-
-    # query = "Is DB Postgres?"
-    # query = "What happens if a token is invalid?"
-    query = "How do I refresh my token?"
-
-    query_embedding_ = client.embeddings.create(
+    # 2) Embed query
+    question = "How do I refresh my token?"
+    q_emb = client.embeddings.create(
         model="text-embedding-3-small",
-        input=query
+        input=question
     ).data[0].embedding
 
 
-    # check cosine similarity of embedding vectors
-    def cosine_similarity(query_embedding, knowledge_embedding):
-        query_embedding = np.array(query_embedding)
-        knowledge_embedding = np.array(knowledge_embedding)
-        return np.dot(
-            query_embedding, knowledge_embedding
-        ) / (np.linalg.norm(query_embedding) * np.linalg.norm(knowledge_embedding))
+    def cosine(a, b):
+        a = np.array(a)
+        b = np.array(b)
+        return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
 
-    scores = [cosine_similarity(query_embedding_, emb) for emb in doc_embeddings]
+    # 3) Top-k + threshold
+    k = 5
+    threshold = 0.55
 
-    # top-k
-    k = 3
-    ranked = sorted(zip(docs, scores), key=lambda x: x[1], reverse=True)
-    print("Question: ", query)
-    print(f"Top {k} results:")
-    for doc, score in ranked[:k]:
-        print(f"{doc}: {score:.3f}")
+    scored = [(doc, cosine(q_emb, emb)) for doc, emb in zip(docs, doc_embeddings)]
+    scored.sort(key=lambda x: x[1], reverse=True)
+
+    selected = [(d, s) for d, s in scored[:k] if s >= threshold]
+
+    if not selected:
+        selected = scored[:2]
+
+    context = "\n".join([f"- {d}" for d, _ in selected])
+
+    # 4) Ask LLM with context
+    prompt = f"""You are a helpful assistant. Answer ONLY using the provided context.
+    If the answer is not in the context, say you don't know.
+
+    Context:
+    {context}
+
+    Question: {question}
+    """
+
+    resp = client.responses.create(
+        model="gpt-4.1-mini",
+        input=prompt
+    )
+
+    print("\n--- Retrieval (top) ---")
+    for d, s in selected:
+        print(f"{s:.3f} -> {d}")
+
+    print("\n--- Answer ---")
+    print(resp.output_text)
+
