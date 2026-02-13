@@ -1,8 +1,8 @@
 
-from . import OPEN_AI_API_KEY
-
 import numpy as np
 from openai import OpenAI
+
+from . import OPEN_AI_API_KEY
 
 client = OpenAI(api_key=OPEN_AI_API_KEY)
 
@@ -23,6 +23,8 @@ if __name__ == '__main__':
 
     doc_embeddings = [doc_data.embedding for doc_data in doc_response.data]
 
+    # query = "Is DB Postgres?"
+    # query = "What happens if a token is invalid?"
     query = "How do I refresh my token?"
 
     query_embedding_ = client.embeddings.create(
