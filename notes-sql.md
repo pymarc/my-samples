@@ -556,7 +556,7 @@ Use for:
 * snapshot taken at transaction start
 * all reads see the same data
 * prevents non-repeatable reads
-* still allows write skew
+* still allows to write skew
 
 Use for:
 
