@@ -1,7 +1,9 @@
-
-import numpy as np
-import logging
+"""A simple AI chat for getting information about the time machine named ChronoShift."""
+import sys
 import json
+import time
+import logging
+import numpy as np
 from openai import OpenAI
 from pathlib import Path
 from argparse import ArgumentParser
@@ -79,5 +81,14 @@ if __name__ == '__main__':
     args = args_parser.parse_args()
     docs_embedding_ = retrieve_docs_embedding(args.docs_embedding_path)
 
-    question_ = "What is ChronoShift X1?"
-    print(answer(question_, docs_embedding_))
+    while True:
+        # question_ = "What is ChronoShift X1?"
+        try:
+            question_ = input("Question: ")
+            t0 = time.perf_counter()
+        except KeyboardInterrupt:
+            sys.exit(0)
+        print('.......')
+        answer = answer(question_, docs_embedding_)
+        waited = time.perf_counter() - t0
+        print(f"Answer [waited {waited:.3f} s]: {answer}")
