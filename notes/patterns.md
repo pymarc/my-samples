@@ -3,7 +3,8 @@
 ## Creational Patterns
 
 ### Singleton
-> Ensures that a class has only one instance and provides a global access point to it. Useful for shared resources like DB pools or configs.
+Ensures that a class has only one instance and provides a global access point to it.
+Useful for shared resources like DB pools or configs.
 
 ```python
 class DB:
@@ -19,7 +20,7 @@ class DB:
 
 ### Factory Method
 
-> Encapsulates object creation logic in one place, so the rest of the code doesn’t depend on concrete classes.
+Encapsulates object creation logic in one place, so the rest of the code doesn’t depend on concrete classes.
 
 ```python
 def create_client(kind):
@@ -34,7 +35,7 @@ def create_client(kind):
 
 ### Builder
 
-> Constructs complex objects step by step, improving readability and avoiding large constructors with many parameters.
+Constructs complex objects step by step, improving readability and avoiding large constructors with many parameters.
 
 ```python
 class Builder:
@@ -57,7 +58,7 @@ obj = Builder().x(1).build()
 
 ### Adapter
 
-> Converts one interface into another expected by the system, allowing incompatible classes to work together.
+Converts one interface into another expected by the system, allowing incompatible classes to work together.
 
 ```python
 class Adapter:
@@ -72,7 +73,7 @@ class Adapter:
 
 ### Decorator
 
-> Dynamically adds behavior to functions or objects without modifying their original code.
+Dynamically adds behavior to functions or objects without modifying their original code.
 
 ```python
 def log(func):
@@ -90,7 +91,7 @@ def f():
 
 ### Facade
 
-> Provides a simplified interface to a complex system, hiding internal details and reducing coupling.
+Provides a simplified interface to a complex system, hiding internal details and reducing coupling.
 
 ```python
 class Facade:
@@ -109,7 +110,7 @@ class Facade:
 
 ### Strategy
 
-> Defines a family of algorithms and makes them interchangeable at runtime without changing the client code.
+Defines a family of algorithms and makes them interchangeable at runtime without changing the client code.
 
 ```python
 class Service:
@@ -129,7 +130,7 @@ Service(algo).run(3)
 
 ### Observer
 
-> Allows objects to subscribe to events and be notified when something happens, enabling loose coupling.
+Allows objects to subscribe to events and be notified when something happens, enabling loose coupling.
 
 ```python
 subscribers = []
@@ -146,7 +147,7 @@ def notify(data):
 
 ### Command
 
-> Encapsulates a request as an object, allowing you to queue, log, retry, or execute it later.
+Encapsulates a request as an object, allowing you to queue, log, retry, or execute it later.
 
 ```python
 class Command:
@@ -166,7 +167,7 @@ cmd.execute()
 
 ### Dependency Injection (DI)
 
-> Instead of creating dependencies inside a class, they are passed from outside, improving testability and flexibility.
+Instead of creating dependencies inside a class, they are passed from outside, improving testability and flexibility.
 
 ```python
 class Service:
@@ -178,7 +179,7 @@ class Service:
 
 ### Fluent API
 
-> A style of API design where methods return the object itself, enabling readable method chaining.
+A style of API design where methods return the object itself, enabling readable method chaining.
 
 ```python
 obj = Builder().x(1).y(2).build()
