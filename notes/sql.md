@@ -1092,3 +1092,285 @@ ALTER COLUMN user_name SET STATISTICS 1000;
 * Event tables favor write speed and simple access patterns
 
 
+# Window Functions – SQL Cheat Sheet (PostgreSQL)
+
+## What is a Window Function?
+
+A window function performs a calculation across a set of rows related to the current row
+**without reducing the number of rows**.
+
+```sql
+FUNCTION() OVER (
+    PARTITION BY ...
+    ORDER BY ...
+)
+````
+
+---
+
+# 1. Ranking Functions
+
+## ROW_NUMBER()
+
+Assigns a unique sequential number to each row.
+
+```sql
+SELECT first_name, salary,
+       ROW_NUMBER() OVER (ORDER BY salary DESC) AS rn
+FROM employees;
+```
+
+1, 2, 3, 4 (no ties handling)
+
+---
+
+## RANK()
+
+Assigns rank with gaps for ties.
+
+```sql
+SELECT first_name, salary,
+       RANK() OVER (ORDER BY salary DESC) AS rnk
+FROM employees;
+```
+
+1, 1, 3
+
+---
+
+## DENSE_RANK()
+
+Assigns rank without gaps.
+
+```sql
+SELECT first_name, salary,
+       DENSE_RANK() OVER (ORDER BY salary DESC) AS rnk
+FROM employees;
+```
+
+1, 1, 2
+
+---
+
+## NTILE(n)
+
+Splits rows into `n` groups (buckets).
+
+```sql
+SELECT first_name, salary,
+       NTILE(4) OVER (ORDER BY salary DESC) AS bucket
+FROM employees;
+```
+
+Quartiles (top 25%, next 25%, etc.)
+
+---
+
+# 2. Aggregate Window Functions
+
+## SUM()
+
+Running total or grouped sum.
+
+```sql
+SELECT hire_date, salary,
+       SUM(salary) OVER (ORDER BY hire_date) AS running_total
+FROM employees;
+```
+
+---
+
+## AVG()
+
+Average over partition.
+
+```sql
+SELECT first_name, department_id,
+       AVG(salary) OVER (PARTITION BY department_id) AS avg_salary
+FROM employees;
+```
+
+---
+
+## COUNT()
+
+Count rows in partition.
+
+```sql
+SELECT first_name, department_id,
+       COUNT(*) OVER (PARTITION BY department_id) AS dept_count
+FROM employees;
+```
+
+---
+
+## MIN() / MAX()
+
+```sql
+SELECT first_name,
+       MAX(salary) OVER () AS max_salary
+FROM employees;
+```
+
+---
+
+# 3. Value Functions
+
+## LEAD()
+
+Gets next row value.
+
+```sql
+SELECT employee_id,
+       LEAD(employee_id) OVER (ORDER BY employee_id) AS next_id
+FROM employees;
+```
+
+---
+
+## LAG()
+
+Gets previous row value.
+
+```sql
+SELECT employee_id,
+       LAG(employee_id) OVER (ORDER BY employee_id) AS prev_id
+FROM employees;
+```
+
+---
+
+## FIRST_VALUE()
+
+Returns the first value in the window.
+
+```sql
+SELECT first_name,
+       FIRST_VALUE(salary) OVER (ORDER BY salary DESC) AS top_salary
+FROM employees;
+```
+
+---
+
+## LAST_VALUE()
+
+Returns last value (requires frame definition!).
+
+```sql
+SELECT first_name,
+       LAST_VALUE(salary) OVER (
+           ORDER BY salary
+           ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+       ) AS last_salary
+FROM employees;
+```
+
+---
+
+# 4. Distribution Functions
+
+## PERCENT_RANK()
+
+Relative position (0–1).
+
+```sql
+SELECT first_name, salary,
+       PERCENT_RANK() OVER (ORDER BY salary) AS pr
+FROM employees;
+```
+
+(rank - 1) / (N - 1)
+
+---
+
+## CUME_DIST()
+
+Cumulative distribution (0–1).
+
+```sql
+SELECT first_name, salary,
+       CUME_DIST() OVER (ORDER BY salary) AS cd
+FROM employees;
+```
+
+% of rows ≤ current value
+
+---
+
+# 5. PARTITION vs ORDER
+
+## PARTITION BY
+
+Splits data into groups.
+
+```sql
+PARTITION BY department_id
+```
+
+---
+
+## ORDER BY
+
+Defines order within a window.
+
+```sql
+ORDER BY salary DESC
+```
+
+---
+
+# 6. Window Frame (Advanced)
+
+## Default (PostgreSQL)
+
+```sql
+RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+```
+
+## Safer (row-by-row)
+
+```sql
+ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+```
+
+---
+
+# Common Use Cases
+
+## Top N per group
+
+```sql
+ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary DESC)
+```
+
+---
+
+## Running total
+
+```sql
+SUM(salary) OVER (ORDER BY hire_date)
+```
+
+---
+
+## Compare with previous
+
+```sql
+salary - LAG(salary) OVER (ORDER BY hire_date)
+```
+
+---
+
+## Find gaps
+
+```sql
+LEAD(id) OVER (ORDER BY id)
+```
+
+---
+
+## Percentiles / segmentation
+
+```sql
+NTILE(4) OVER (ORDER BY salary)
+```
