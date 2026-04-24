@@ -9,3 +9,5 @@ RUN pip install uv
 COPY . /app
 
 RUN uv pip install --system .
+
+ENV PYTHONPATH=/app

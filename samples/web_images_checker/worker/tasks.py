@@ -2,7 +2,7 @@
 import logging
 import time
 
-from .celery_handler import celery_app
+from worker.celery_handler import celery_app
 
 @celery_app.task
 def analyze_image(image_url: str):

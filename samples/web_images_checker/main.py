@@ -2,8 +2,8 @@
 from fastapi import FastAPI
 from celery.result import AsyncResult
 
-from .worker import tasks
-from .worker.celery_handler import celery_app
+from worker import tasks
+from worker.celery_handler import celery_app
 
 app = FastAPI()
 
