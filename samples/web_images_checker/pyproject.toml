@@ -1,0 +1,14 @@
+[project]
+name = "web-images-checker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "celery[redis]>=5.6.3",
+    "fastapi>=0.136.1",
+    "flower>=2.0.1",
+    "pillow>=12.2.0",
+    "requests>=2.33.1",
+    "uvicorn>=0.46.0",
+]
