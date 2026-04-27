@@ -24,7 +24,9 @@ def image_status(task_id: str) -> dict:
         "task_id": task_id,
         "status": image_task.status,
     }
-    if image_task.ready():
+    if image_task.successful():
         response["result"] = image_task.result
+    elif image_task.failed():
+        response["error"] = str(image_task.result)
 
     return response
