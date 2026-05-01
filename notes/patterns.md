@@ -187,45 +187,99 @@ obj = Builder().x(1).y(2).build()
 
 ---
 
-## Summary
+## Abstract Factory
 
-* Singleton → one shared instance
-* Factory → centralized object creation
-* Builder → step-by-step construction
-* Adapter → interface translation
-* Decorator → add behavior without modifying code
-* Facade → simplify complex systems
-* Strategy → interchangeable algorithms
-* Observer → event-based communication
-* Command → action as an object
-* DI → inject dependencies from outside
-* Fluent API → readable method chaining
+**Creates families of related objects without specifying their concrete classes.**
 
----
+### Idea
 
-# Remaining Design Patterns (Not Covered Yet)
+Choose one “variant” (e.g. Postgres, MySQL) and get all compatible objects from it.
 
-## Creational
+### Example
 
-### Abstract Factory
-> Provides an interface for creating families of related objects without specifying their concrete classes.
+```python
+class PostgresFactory:
+    def create_repo(self):
+        return PostgresRepo()
 
----
+class MySQLFactory:
+    def create_repo(self):
+        return MySQLRepo()
 
-### Prototype
-> Creates new objects by copying an existing instance instead of constructing from scratch.
+def run(factory):
+    repo = factory.create_repo()
+```
 
 ---
 
-## Structural
+## Prototype
 
-### Bridge
-> Decouples abstraction from implementation so both can vary independently.
+**Creates new objects by copying an existing one.**
+
+### Idea
+
+Clone instead of building from scratch.
+
+### Example
+
+```python
+import copy
+
+obj1 = {"a": [1, 2]}
+obj2 = copy.deepcopy(obj1)
+obj2["a"].append(3)
+```
 
 ---
 
-### Composite
-> Treats individual objects and groups of objects uniformly (tree structures).
+## Bridge
+
+**Separates abstraction from implementation.**
+
+### Idea
+
+Avoid class explosion by composing instead of inheriting.
+
+### Example
+
+```python
+class Device:
+    def on(self): pass
+
+class TV(Device):
+    def on(self): print("TV ON")
+
+class Remote:
+    def __init__(self, device):
+        self.device = device
+
+    def power(self):
+        self.device.on()
+```
+
+---
+
+## Composite
+
+**Treats single objects and groups uniformly (tree structure).**
+
+### Idea
+
+Same interface for leaf and container.
+
+### Example
+
+```python
+class File:
+    def size(self): return 10
+
+class Folder:
+    def __init__(self):
+        self.items = []
+
+    def size(self):
+        return sum(i.size() for i in self.items)
+```
 
 ---
 
