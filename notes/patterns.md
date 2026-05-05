@@ -835,17 +835,266 @@ Mediator = objects communicate through a central hub
 
 ---
 
-### Memento
-> Captures and restores an object's internal state (undo/rollback).
+## Memento
+
+**Captures and restores an object's internal state (undo/rollback).**
 
 ---
 
-### Interpreter
-> Defines a grammar and interprets sentences in that language (DSLs).
+### Idea
+Save a snapshot of an object's state and restore it later.
+
+---
+
+### Example
+
+```python
+class Memento:
+    def __init__(self, state):
+        self.state = state
+
+
+class Editor:
+    def __init__(self):
+        self.text = ""
+
+    def save(self):
+        return Memento(self.text)
+
+    def restore(self, memento):
+        self.text = memento.state
+
+
+class History:
+    def __init__(self):
+        self.stack = []
+
+    def push(self, memento):
+        self.stack.append(memento)
+
+    def pop(self):
+        return self.stack.pop()
+
+
+editor = Editor()
+history = History()
+
+editor.text = "Hello"
+history.push(editor.save())
+
+editor.text = "Hello World"
+history.push(editor.save())
+
+editor.text = "Oops"
+
+editor.restore(history.pop())
+
+print(editor.text)  # Hello World
+````
+
+---
+
+### What’s happening
+
+```text
+Originator → creates snapshots (Memento)
+Caretaker → stores history
+restore() → restores previous state
+```
+
+---
+
+### When to use
+
+* undo/redo functionality
+* editors, games, configuration rollback
+* state history tracking
+
+---
+
+### When NOT to use
+
+* very large state (memory cost)
+* no need for history
+
+---
+
+### Quick summary
+
+```text
+Memento = save and restore object state
+```
+
+---
+
+## Interpreter
+
+**Defines a grammar and interprets expressions in that language (often DSLs).**
+
+---
+
+### Idea
+Represent language elements as objects and evaluate them.
+
+---
+
+### Example
+
+```python
+class Expression:
+    def interpret(self):
+        pass
+
+
+class Number(Expression):
+    def __init__(self, value):
+        self.value = value
+
+    def interpret(self):
+        return self.value
+
+
+class Add(Expression):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def interpret(self):
+        return self.left.interpret() + self.right.interpret()
+
+
+expr = Add(Number(1), Add(Number(2), Number(3)))
+print(expr.interpret())  # 6
+````
+
+---
+
+### What’s happening
+
+```text
+Expression → builds a tree (AST)
+interpret() → evaluates recursively
+```
+
+---
+
+### When to use
+
+* simple DSLs
+* expression evaluation
+* rule engines
+* parsers
+
+---
+
+### When NOT to use
+
+* complex grammars (use parser generators instead)
+* simple cases (overengineering)
+
+---
+
+### Quick summary
+
+```text
+Interpreter = represent grammar as objects and evaluate it
+```
 
 ---
 
 ## Partially Covered / Mentioned
 
-### Chain of Responsibility
-> Passes a request along a chain of handlers until one handles it.
+## Chain of Responsibility — Order Matters
+
+**The order of handlers in the chain is important.**
+
+---
+
+### Idea
+Each handler decides:
+- handle the request
+- or pass it to the next
+
+The **first matching handler stops the chain**.
+
+---
+
+### Example
+
+```python
+class Handler:
+    def __init__(self, next=None):
+        self.next = next
+
+    def handle(self, x):
+        if self.next:
+            return self.next.handle(x)
+
+
+class SmallHandler(Handler):
+    def handle(self, x):
+        if x < 10:
+            return "small"
+        return super().handle(x)
+
+
+class MediumHandler(Handler):
+    def handle(self, x):
+        if x < 20:
+            return "medium"
+        return super().handle(x)
+````
+
+---
+
+### Case 1 (correct order)
+
+```python
+chain = SmallHandler(MediumHandler())
+
+print(chain.handle(5))   # small
+print(chain.handle(15))  # medium
+```
+
+```text
+Small → Medium
+```
+
+---
+
+### Case 2 (wrong order)
+
+```python
+chain = MediumHandler(SmallHandler())
+
+print(chain.handle(5))  # medium
+```
+
+```text
+Medium handles first → Small never runs
+```
+
+---
+
+### Key Insight
+
+```text
+The first matching handler wins
+```
+
+---
+
+### Best Practice
+
+```text
+Place more specific handlers first,
+and more general ones later
+```
+
+---
+
+### Quick Summary
+
+```text
+Order matters because the first matching handler stops the chain
+```
