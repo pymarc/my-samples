@@ -680,13 +680,158 @@ State = behavior depends on current state object
 
 ---
 
-### Visitor
-> Lets you add new operations to objects without modifying their classes.
+## Visitor
+
+**Lets you add new operations to objects without modifying their classes.**
 
 ---
 
-### Mediator
-> Centralizes communication between objects to reduce direct dependencies.
+### Idea
+Move operations out of object classes into separate visitor classes.
+
+---
+
+### Example
+
+```python
+class Visitor:
+    def visit_user(self, user): pass
+    def visit_order(self, order): pass
+
+
+class PrintVisitor(Visitor):
+    def visit_user(self, user):
+        print("User:", user.name)
+
+    def visit_order(self, order):
+        print("Order:", order.id)
+
+
+class User:
+    def __init__(self, name):
+        self.name = name
+
+    def accept(self, visitor):
+        visitor.visit_user(self)
+
+
+class Order:
+    def __init__(self, id):
+        self.id = id
+
+    def accept(self, visitor):
+        visitor.visit_order(self)
+
+
+visitor = PrintVisitor()
+
+User("Marcin").accept(visitor)
+Order(123).accept(visitor)
+````
+
+---
+
+### What’s happening
+
+```text
+element.accept(visitor) → calls visitor method
+visitor → executes operation for that type
+```
+
+---
+
+### When to use
+
+* adding new operations frequently
+* working with object structures (trees, AST)
+* exporting, printing, validation
+
+---
+
+### When NOT to use
+
+* object types change often (Visitor becomes hard to maintain)
+* simple logic (overengineering)
+
+---
+
+### Quick summary
+
+```text
+Visitor = add new operations without modifying existing classes
+```
+
+---
+
+## Mediator
+
+**Centralizes communication between objects to reduce direct dependencies.**
+
+---
+
+### Idea
+Objects don’t communicate directly with each other.  
+They interact through a mediator (central hub).
+
+---
+
+### Example
+
+```python
+class ChatRoom:
+    def send(self, message, user):
+        print(f"{user.name}: {message}")
+
+
+class User:
+    def __init__(self, name, mediator):
+        self.name = name
+        self.mediator = mediator
+
+    def send(self, message):
+        self.mediator.send(message, self)
+
+
+room = ChatRoom()
+
+u1 = User("Marcin", room)
+u2 = User("Patrycja", room)
+
+u1.send("Hi!")
+````
+
+---
+
+### What’s happening
+
+```text
+User → Mediator → handles communication
+Users don’t talk to each other directly
+```
+
+---
+
+### When to use
+
+* many interacting objects (to avoid tight coupling)
+* GUI components
+* chat systems
+* workflow coordination
+
+---
+
+### When NOT to use
+
+* few objects
+* simple direct communication is enough
+
+---
+
+### Quick summary
+
+```text
+Mediator = objects communicate through a central hub
+```
 
 ---
 
