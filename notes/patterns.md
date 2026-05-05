@@ -600,8 +600,83 @@ Template Method = fixed algorithm + customizable steps
 
 ---
 
-### State
-> Allows an object to change its behavior when its internal state changes.
+## State
+
+**Allows an object to change its behavior when its internal state changes.**
+
+---
+
+### Idea
+Replace complex `if/else` logic with separate state objects.  
+The context delegates behavior to the current state.
+
+---
+
+### Example
+
+```python
+class State:
+    def handle(self, context):
+        pass
+
+
+class OffState(State):
+    def handle(self, context):
+        print("Turning ON")
+        context.state = OnState()
+
+
+class OnState(State):
+    def handle(self, context):
+        print("Turning OFF")
+        context.state = OffState()
+
+
+class Switch:
+    def __init__(self):
+        self.state = OffState()
+
+    def press(self):
+        self.state.handle(self)
+
+
+s = Switch()
+s.press()  # Turning ON
+s.press()  # Turning OFF
+````
+
+---
+
+### What’s happening
+
+```text
+Context → delegates to State
+State   → can change Context state
+```
+
+---
+
+### When to use
+
+* state machines (FSM)
+* workflows (order → paid → shipped)
+* UI states (active, disabled)
+* game logic (player states)
+
+---
+
+### When NOT to use
+
+* very few simple states
+* simple if/else is clearer
+
+---
+
+### Quick summary
+
+```text
+State = behavior depends on current state object
+```
 
 ---
 
