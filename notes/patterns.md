@@ -20,7 +20,7 @@ class DB:
 
 ### Factory Method
 
-Encapsulates object creation logic in one place, so the rest of the code doesn’t depend on concrete classes.
+Encapsulates object creation logic in one place, so the rest of the code doesn't depend on concrete classes.
 
 ```python
 def create_client(kind):
@@ -193,7 +193,13 @@ obj = Builder().x(1).y(2).build()
 
 ### Idea
 
-Choose one “variant” (e.g. Postgres, MySQL) and get all compatible objects from it.
+Choose one "variant" (e.g. Postgres, MySQL) and get all compatible objects from it.
+
+You can think of it like an IKEA kitchen set:
+
+> You buy a set (countertop, cabinets, hinges) and everything fits together
+> because it comes from one factory.
+
 
 ### Example
 
@@ -218,7 +224,7 @@ def run(factory):
 
 ### Idea
 
-Clone instead of building from scratch.
+Clone instead of building from scratch and in that copied object change selected attributes.
 
 ### Example
 
@@ -251,7 +257,7 @@ class TV(Device):
 
 class Remote:
     def __init__(self, device):
-        self.device = device
+        self.device = device  # Here is the bridge
 
     def power(self):
         self.device.on()
@@ -283,13 +289,132 @@ class Folder:
 
 ---
 
-### Flyweight
-> Reduces memory usage by sharing common parts of objects.
+## Flyweight
+
+**Reduces memory usage by sharing common parts of objects.**
 
 ---
 
-### Proxy
-> Provides a placeholder or wrapper to control access to another object (e.g. lazy loading, caching, access control).
+### Idea
+Avoid creating many identical objects.  
+Store shared (intrinsic) data once and reuse it.
+
+---
+
+### Key Concept
+
+```text
+Intrinsic  = shared (stored inside object)
+Extrinsic  = external (passed from outside)
+````
+
+---
+
+### Example
+
+```python
+class Character:
+    def __init__(self, char):
+        self.char = char  # intrinsic (shared)
+
+
+class CharacterFactory:
+    _pool = {}
+
+    @classmethod
+    def get(cls, char):
+        if char not in cls._pool:
+            cls._pool[char] = Character(char)
+        return cls._pool[char]
+
+
+c1 = CharacterFactory.get("A")
+c2 = CharacterFactory.get("A")
+
+print(c1 is c2)  # True
+```
+
+---
+
+## Proxy
+
+**Provides a wrapper that controls access to another object.**
+
+---
+
+### Idea
+Add behavior (lazy loading, caching, security, logging)  
+**without changing the original object.**
+
+---
+
+### Example (Lazy Loading)
+
+```python
+class RealService:
+    def get_data(self):
+        print("Loading data...")
+        return [1, 2, 3]
+
+
+class ProxyService:
+    def __init__(self):
+        self._real = None
+
+    def get_data(self):
+        if self._real is None:
+            self._real = RealService()  # lazy initialization
+        return self._real.get_data()
+
+
+service = ProxyService()
+
+service.get_data()  # creates RealService
+service.get_data()  # reuses existing instance
+````
+
+---
+
+### What’s happening
+
+```text
+Proxy → controls access
+Real  → does the actual work
+```
+
+---
+
+### Common use cases
+
+* lazy loading
+* caching results
+* access control (auth)
+* logging / monitoring
+* remote calls (RPC, HTTP)
+
+---
+
+### Proxy types
+
+* Lazy Proxy → creates object only when needed
+* Cache Proxy → stores results
+* Protection Proxy → checks permissions
+* Logging Proxy → logs calls
+
+---
+
+### When to use
+
+* you need control over access to an object
+* object is expensive to create
+* you want to add behavior transparently
+
+---
+
+### When NOT to use
+
+* no extra logic needed
+* simple direct access is enough
 
 ---
 
