@@ -420,13 +420,183 @@ Real  → does the actual work
 
 ## Behavioral
 
-### Iterator
-> Provides a way to traverse a collection without exposing its internal structure.
+## Iterator
+
+**Provides a way to traverse a collection without exposing its internal structure.**
 
 ---
 
-### Template Method
-> Defines the skeleton of an algorithm, allowing subclasses to override specific steps.
+### Idea
+Access elements sequentially without knowing how the collection is implemented.
+
+---
+
+### Example (Python built-in)
+
+```python
+for x in [1, 2, 3]:
+    print(x)
+````
+
+The `for` loop uses an iterator internally.
+
+---
+
+### Manual iteration
+
+```python
+items = [1, 2, 3]
+
+it = iter(items)
+
+print(next(it))  # 1
+print(next(it))  # 2
+print(next(it))  # 3
+```
+
+---
+
+### Custom iterator
+
+```python
+class Counter:
+    def __init__(self, max):
+        self.current = 0
+        self.max = max
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current >= self.max:
+            raise StopIteration
+        self.current += 1
+        return self.current
+
+
+for x in Counter(3):
+    print(x)
+```
+
+---
+
+### Generator (Pythonic way)
+
+```python
+def counter(max):
+    for i in range(1, max + 1):
+        yield i
+
+
+for x in counter(3):
+    print(x)
+```
+
+---
+
+### What’s happening
+
+```text
+Iterator → keeps state (position)
+next()   → returns next element
+StopIteration → signals end
+```
+
+---
+
+### When to use
+
+* large data (streaming)
+* files
+* paginated APIs
+* lazy evaluation
+
+---
+
+### When NOT to use
+
+* simple collections (Python handles it already)
+
+---
+
+### Quick summary
+
+```text
+Iterator = sequential access without exposing structure
+```
+
+---
+
+## Template Method
+
+**Defines the skeleton of an algorithm, allowing subclasses to override specific steps.**
+
+---
+
+### Idea
+Keep the overall algorithm structure fixed, but allow certain steps to vary.
+
+---
+
+### Example
+
+```python
+class DataProcessor:
+    def process(self):
+        self.load()
+        self.transform()
+        self.save()
+
+    def load(self): pass
+    def transform(self): pass
+    def save(self): pass
+
+
+class CSVProcessor(DataProcessor):
+    def load(self):
+        print("Load CSV")
+
+    def transform(self):
+        print("Transform CSV")
+
+    def save(self):
+        print("Save CSV")
+
+
+p = CSVProcessor()
+p.process()
+````
+
+---
+
+### What’s happening
+
+```text
+process() → defines the algorithm
+steps     → can be overridden
+```
+
+---
+
+### When to use
+
+* fixed workflow (pipeline, ETL, request handling)
+* steps vary, but order stays the same
+
+---
+
+### When NOT to use
+
+* algorithm structure changes often
+* you need full flexibility (use Strategy instead)
+
+---
+
+### Quick summary
+
+```text
+Template Method = fixed algorithm + customizable steps
+```
 
 ---
 
