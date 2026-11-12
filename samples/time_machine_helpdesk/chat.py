@@ -89,6 +89,6 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             sys.exit(0)
         print('.......')
-        answer = answer(question_, docs_embedding_)
+        answer_ = answer(question_, docs_embedding_)
         waited = time.perf_counter() - t0
-        print(f"Answer [waited {waited:.3f} s]: {answer}")
+        print(f"Answer [waited {waited:.3f} s]: {answer_}")
