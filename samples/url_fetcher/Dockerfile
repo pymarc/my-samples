@@ -18,10 +18,12 @@ RUN apt-get update && apt-get install -y \
 # Install pip for Python 3.13
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.13
 
-COPY ./samples /app/samples
 COPY requirements.txt /app/
-
 RUN python3.13 -m pip install --no-cache-dir -r requirements.txt
+
+COPY ./samples/url_fetcher/ /app/samples/url_fetcher/
+COPY ./samples/utils/ /app/samples/utils/
+
 
 ENV PYTHONPATH="/app:${PYTHONPATH}"
 

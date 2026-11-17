@@ -6,7 +6,7 @@ WORKDIR /app
 
 RUN pip install uv
 
-COPY . /app
+COPY ./samples/web_images_checker /app
 
 RUN uv pip install --system .
 
