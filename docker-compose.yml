@@ -8,31 +8,56 @@ services:
     container_name: url_fetcher
     restart: "no"
 
-  web_images_checker_api:
-    build: samples
-    working_dir: /app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
-    ports:
-      - "8000:8000"
-    depends_on:
-      - redis
+  url_fetcher_tests:
+    image: url_fetcher_standalone:latest
+    build:
+      context: .
+      dockerfile: ./samples/url_fetcher/Dockerfile
+    container_name: url_fetcher_tests
+    entrypoint: ["pytest"]
+    command: ["-v", "samples/url_fetcher"]
+    restart: "no"
 
-  redis:
+  api-web_images_checker:
+    image: web_images_checker_standalone:latest
+    build:
+      context: .
+      dockerfile: ./samples/web_images_checker/Dockerfile
+    container_name: api-web_images_checker
+    working_dir: /app
+    command: uvicorn main:app --host 0.0.0.0 --port 8111
+    ports:
+      - "8111:8111"
+    depends_on:
+      - redis-web_images_checker
+      - worker-web_images_checker
+      - flower-web_images_checker
+
+  redis-web_images_checker:
     image: redis:7-alpine
+    container_name: redis-web_images_checker
     ports:
       - "6379:6379"
 
-  worker:
-    build: samples
+  worker-web_images_checker:
+    image: web_images_checker_standalone:latest
+    build:
+      context: .
+      dockerfile: ./samples/web_images_checker/Dockerfile
+    container_name: worker-web_images_checker
     command: celery -A worker.celery_handler.celery_app worker --loglevel=info
     depends_on:
-      - redis
+      - redis-web_images_checker
 
-  flower:
-    build: samples
+  flower-web_images_checker:
+    image: web_images_checker_standalone:latest
+    build:
+      context: .
+      dockerfile: ./samples/web_images_checker/Dockerfile
+    container_name: flower-web_images_checker
     command: celery -A worker.celery_handler.celery_app flower --port=5555
     ports:
       - "5555:5555"
     depends_on:
-      - redis
-      - worker
+      - redis-web_images_checker
+      - worker-web_images_checker
