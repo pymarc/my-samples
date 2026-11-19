@@ -1,16 +1,20 @@
 # Overview
 
 This repository contains code snippets that showcase my coding style
-and serve as handy notes for future reference.
+and serves as a handy reference for the future.
 
 ## Applications
+
 In the repository there are these applications:
 
-- **URL Fetcher** (`samples/url_fetcher`) - asynchronically fetch basic information about specified URLs
-- **Web Images Checker** (`samples/web_images_checker`) - a FastAPI service that queues image analysis jobs using Celery and Redis
-- **Events API** (`samples/events_api`) - an async FastAPI service backed by PostgreSQL to handle hypothetical events
-- **AI demos** (`samples/ai`) - it presents tokenization and OpenAI embeddings
-- **Time Machine Helpdesk** (`samples/time_machine_helpdesk`) - an LLM chat which gives answers based on the attached documentation
+- **URL Fetcher** (`samples/url_fetcher`) - asynchronously fetch basic information about specified URLs
+- **Web Images Checker** (`samples/web_images_checker`) - a FastAPI service that queues image analysis jobs
+  using Celery and Redis
+- **Events API** (`samples/events_api`) - an async FastAPI service backed by PostgreSQL
+  to handle hypothetical events
+- **AI demos** (`samples/ai`) - tokenization and OpenAI embeddings
+- **Time Machine Helpdesk** (`samples/time_machine_helpdesk`) - an LLM chat which gives answers
+  based on the attached documentation
 
 The Docker Compose configuration currently supports the URL Fetcher and Web Images Checker.
 The other samples are run locally.
